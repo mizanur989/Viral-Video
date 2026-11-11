@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Viral Video</title>
+<style>
+:root{--bg:#080b12;--panel:#111827;--line:#243044;--cyan:#19d3e6;--pink:#f02b9b;--text:#f4f7fb;--muted:#aab4c3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,"Noto Sans Bengali",sans-serif}
+header{padding:18px 5%;background:#0d1320;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+.top{max-width:1100px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-size:25px;font-weight:900;color:#ffe14a;letter-spacing:.4px}.tag{color:var(--muted);font-size:13px}
+main{max-width:1100px;margin:24px auto;padding:0 16px}
+.notice{background:#172033;border:1px solid #34445e;padding:12px 14px;border-radius:12px;color:#d8e3f2;font-size:14px;line-height:1.6;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 8px 24px #0005}
+.thumb{height:145px;background:linear-gradient(135deg,#202b48,#5b1d67);display:grid;place-items:center;font-size:42px}
+.info{padding:14px}.info h3{margin:0 0 8px;font-size:17px}.meta{font-size:12px;color:var(--muted);margin-bottom:14px}
+button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(90deg,var(--pink),#8b32db)}
+button.secondary{background:#263348;border:1px solid #40516d}
+.adbox{background:#0b1220;border:1px dashed #64748b;border-radius:12px;padding:15px;margin:12px 0;color:#cbd5e1;text-align:center}
+.hidden{display:none!important}.modal{position:fixed;inset:0;background:#000b;display:grid;place-items:center;padding:16px;z-index:5}
+.dialog{width:min(520px,100%);background:#111827;border:1px solid #39465c;border-radius:18px;padding:20px}
+.dialog h2{margin-top:0}video{width:100%;max-height:65vh;background:#000;border-radius:12px;margin-top:10px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:30px}
+input{width:100%;padding:10px;border-radius:9px;border:1px solid #42516a;background:#0b1220;color:white;margin:7px 0 12px}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+</style>
+</head>
+<body>
+<header><div class="top"><div><div class="brand">🔥 VIRAL VIDEO</div><div class="tag">Watch videos • Unlock with approved ads</div></div><button class="secondary" onclick="document.getElementById('admin').classList.remove('hidden')">ভিডিও যোগ করুন (ডেমো)</button></div></header>
+<main>
+<div class="notice">এটি Viral Video ওয়েবসাইটের বিনামূল্যের প্রাথমিক ডেমো। এখানে ভিডিও কার্ড, আনলক বাটন ও বিজ্ঞাপনের নমুনা আছে। বাস্তবে বিজ্ঞাপন থেকে আয় করতে অনুমোদিত বিজ্ঞাপন নেটওয়ার্কের Rewarded Ads SDK যুক্ত করতে হবে।</div>
+<div class="grid" id="videos">
+<article class="card" data-title="আমার প্রথম ভিডিও"><div class="thumb">▶</div><div class="info"><h3>আমার প্রথম ভিডিও</h3><div class="meta">ভিডিও • ডেমো</div><button onclick="unlock(this)">ভিডিও আনলক করুন</button></div></article>
+<article class="card" data-title="মজার ভিডিও"><div class="thumb">🎬</div><div class="info"><h3>মজার ভিডিও</h3><div class="meta">ভিডিও • ডেমো</div><button onclick="unlock(this)">ভিডিও আনলক করুন</button></div></article>
+<article class="card" data-title="নতুন ভিডিও"><div class="thumb">✨</div><div class="info"><h3>নতুন ভিডিও</h3><div class="meta">ভিডিও • ডেমো</div><button onclick="unlock(this)">ভিডিও আনলক করুন</button></div></article>
+</div>
+<section id="player" class="card hidden" style="margin-top:22px;padding:16px"><h2 id="playingTitle">ভিডিও</h2><video id="videoPlayer" controls></video><p class="small">এই ডেমোতে নির্বাচিত ভিডিওটি শুধু আপনার বর্তমান ব্রাউজারে চালু হবে।</p></section>
+</main>
+<div id="unlockModal" class="modal hidden"><div class="dialog"><h2>ভিডিও আনলক</h2><p>বাস্তবে এখানে অনুমোদিত Rewarded Ad দেখানো হবে। এই ডেমোতে বিজ্ঞাপন দেখার ভান করে ভিউ বা আয় গণনা করা হয় না।</p><div class="adbox">বিজ্ঞাপনের স্থান<br><b>Rewarded Ad SDK এখানে যুক্ত করতে হবে</b></div><p class="small">ডেমো পরীক্ষার জন্য নিচের বোতামে চাপলে ভিডিওটি শুধু এই ব্রাউজারে আনলক হবে—এটি বিজ্ঞাপন দেখা বা আয় নয়।</p><button id="demoUnlock">ডেমো আনলক</button> <button class="secondary" onclick="closeModal()">বন্ধ করুন</button></div></div>
+<div id="admin" class="modal hidden"><div class="dialog"><h2>নিজের ভিডিও যোগ করুন</h2><label>ভিডিওর নাম</label><input id="videoTitle" placeholder="যেমন: আমার নতুন ভিডিও"><label>ভিডিও ফাইল</label><input id="videoFile" type="file" accept="video/*"><p class="small">এটি শুধু ডেমো: ফাইলটি আপনার ডিভাইসের ব্রাউজারে অস্থায়ীভাবে দেখা যাবে। সবার জন্য প্রকাশ করতে অনলাইন স্টোরেজ ও ব্যাকএন্ড লাগবে।</p><button onclick="addVideo()">ডেমো ভিডিও যোগ করুন</button> <button class="secondary" onclick="document.getElementById('admin').classList.add('hidden')">বন্ধ</button></div></div>
+<footer>© Viral Video • Free starter demo</footer>
+<script>
+let pendingButton=null, localUrl=null;
+function unlock(btn){pendingButton=btn;document.getElementById('unlockModal').classList.remove('hidden')}
+function closeModal(){document.getElementById('unlockModal').classList.add('hidden')}
+document.getElementById('demoUnlock').onclick=()=>{if(pendingButton){pendingButton.textContent='আনলক হয়েছে';pendingButton.disabled=true;let card=pendingButton.closest('.card');document.getElementById('playingTitle').textContent=card.dataset.title;document.getElementById('player').classList.remove('hidden');document.getElementById('player').scrollIntoView({behavior:'smooth'});}closeModal()};
+function addVideo(){let title=document.getElementById('videoTitle').value.trim();let file=document.getElementById('videoFile').files[0];if(!title||!file){alert('ভিডিওর নাম ও ফাইল দিন।');return}if(localUrl)URL.revokeObjectURL(localUrl);localUrl=URL.createObjectURL(file);let card=document.createElement('article');card.className='card';card.dataset.title=title;card.innerHTML='<div class="thumb">🎥</div><div class="info"><h3></h3><div class="meta">আপনার ডিভাইসের ডেমো ভিডিও</div><button>ভিডিও আনলক করুন</button></div>';card.querySelector('h3').textContent=title;card.querySelector('button').onclick=function(){pendingButton=this;document.getElementById('unlockModal').classList.remove('hidden');document.getElementById('demoUnlock').onclick=()=>{document.getElementById('playingTitle').textContent=title;let v=document.getElementById('videoPlayer');v.src=localUrl;document.getElementById('player').classList.remove('hidden');closeModal()}};document.getElementById('videos').prepend(card);document.getElementById('admin').classList.add('hidden')}
+</script>
+</body></html>
