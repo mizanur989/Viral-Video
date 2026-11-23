@@ -27,7 +27,7 @@
  <section class="panel"><h2>📢 বিজ্ঞাপন নিয়ন্ত্রণ</h2><p class="muted">এই সেটিং ভবিষ্যতের বিজ্ঞাপন প্লেয়ারকে নিয়ন্ত্রণ করার জন্য। বিজ্ঞাপন নেটওয়ার্ক এখনো যুক্ত হয়নি।</p><div class="row"><div class="stat"><small>Ad network status</small><b style="font-size:17px;color:var(--warn)">Not connected</b></div><div class="stat"><small>চালু বিজ্ঞাপন</small><b id="runningAds">0</b></div></div><p id="adsState" class="muted">বিজ্ঞাপন বন্ধ</p><button id="toggleAds" class="secondary">বিজ্ঞাপন চালু করো</button><div id="adsStatus" class="status"></div></section>
  <section class="panel"><h2>📁 ভিডিও পরিচালনা</h2><div id="adminVideoList" class="muted">ভিডিও লোড হচ্ছে…</div></section>
 </section>
-<section id="uploadPanel" class="panel hidden"><h2>Upload a video</h2><label>Video title</label><input id="title" type="text" placeholder="Enter video title"><label>Select video file</label><input id="videoFile" type="file" accept="video/*"><button id="uploadBtn">Upload video</button><div id="uploadStatus" class="status"></div><p class="muted">ফাইলটি আপনার private Supabase Storage bucket-এ যাবে।</p></section>
+<section id="uploadPanel" class="panel hidden"><h2>Upload a video</h2><label>Video title</label><input id="title" type="text" placeholder="Enter video title"><label>Select video file</label><input id="videoFile" type="file" accept="video/*"><label>ভিডিও থাম্বনেইল ছবি (ঐচ্ছিক)</label><input id="thumbnailFile" type="file" accept="image/*"><p class="muted">JPG, PNG বা WebP ছবি নির্বাচন করো।</p><img id="thumbnailPreview" class="hidden" alt="Thumbnail preview" style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;margin:8px 0"><button id="uploadBtn">Upload video</button><div id="uploadStatus" class="status"></div><p class="muted">ফাইলটি আপনার private Supabase Storage bucket-এ যাবে।</p></section>
 </main><footer>VIRAL VIDEO</footer>
 <script>
 const SUPABASE_URL='https://ibrvmjmltqqltggrxwvc.supabase.co';
@@ -40,7 +40,7 @@ function status(id,msg){$(id).textContent=msg;}
 function fmt(n){return Number(n||0).toLocaleString();}
 async function loadVideos(){
  const box=$('videoList');
- const {data,error}=await client.from('videos').select('id,title,video_path,view_count').order('id',{ascending:false}).limit(50);
+ const {data,error}=await client.from('videos').select('id,title,video_path,thumbnail_path,view_count').order('id',{ascending:false}).limit(50);
  if(error){box.textContent='ভিডিও লোড করা যায়নি: '+error.message;return;}
  if(!data||!data.length){box.textContent='এখনো কোনো ভিডিও আপলোড করা হয়নি।';$('adminVideoList').textContent='কোনো ভিডিও নেই।';return;}
  box.innerHTML='';
@@ -48,6 +48,7 @@ async function loadVideos(){
   const card=document.createElement('div');card.className='video';
   const name=document.createElement('strong');name.textContent=v.title||'Untitled video';
   const meta=document.createElement('span');meta.className='muted';meta.textContent='ভিউ: '+fmt(v.view_count||0);
+  if(v.thumbnail_path){const thumb=await client.storage.from(BUCKET).createSignedUrl(v.thumbnail_path,3600);if(!thumb.error){const img=document.createElement('img');img.src=thumb.data.signedUrl;img.alt='ভিডিও থাম্বনেইল';img.style.width='100%';img.style.maxHeight='240px';img.style.objectFit='cover';img.style.borderRadius='10px';img.style.marginTop='10px';card.append(img);}}
   const playerBox=document.createElement('div');playerBox.style.marginTop='12px';
   const loading=document.createElement('p');loading.className='muted';loading.textContent='ভিডিওর প্রিভিউ লোড হচ্ছে…';
   playerBox.append(loading);
@@ -77,9 +78,9 @@ function renderAdminVideos(videos){
 }
 async function deleteVideo(id,title){
  if(!confirm('এই ভিডিওটি মুছে ফেলতে চাও?'))return;
- const {data,error:readErr}=await client.from('videos').select('video_path').eq('id',id).single();
+ const {data,error:readErr}=await client.from('videos').select('video_path,thumbnail_path').eq('id',id).single();
  if(readErr){status('dashboardStatus','ভিডিওর তথ্য পাওয়া যায়নি: '+readErr.message);return;}
- if(data?.video_path){const rm=await client.storage.from(BUCKET).remove([data.video_path]);if(rm.error){status('dashboardStatus','Storage থেকে ভিডিও মুছতে পারেনি: '+rm.error.message);return;}}
+ const paths=[data?.video_path,data?.thumbnail_path].filter(Boolean);if(paths.length){const rm=await client.storage.from(BUCKET).remove(paths);if(rm.error){status('dashboardStatus','Storage থেকে ফাইল মুছতে পারেনি: '+rm.error.message);return;}}
  const del=await client.from('videos').delete().eq('id',id);
  if(del.error){status('dashboardStatus','ডাটাবেস থেকে মুছতে পারেনি: '+del.error.message);return;}
  status('dashboardStatus','ভিডিও মুছে ফেলা হয়েছে।');await loadVideos();await loadDashboard();
@@ -107,13 +108,26 @@ async function refreshAuth(){
 }
 $('loginBtn').addEventListener('click',async()=>{status('authStatus','Login হচ্ছে…');const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){status('authStatus','Login হয়নি: '+error.message);return;}if(data.user?.id!==ADMIN_UID){await client.auth.signOut();status('authStatus','এই অ্যাকাউন্ট Admin হিসেবে অনুমোদিত নয়।');return;}status('authStatus','Admin login সফল।');await refreshAuth();});
 $('logoutBtn').addEventListener('click',async()=>{await client.auth.signOut();$('adminPanel').classList.add('hidden');$('uploadPanel').classList.add('hidden');await refreshAuth();status('authStatus','Logout হয়েছে।');});
+$('thumbnailFile').addEventListener('change',()=>{
+ const file=$('thumbnailFile').files[0];const preview=$('thumbnailPreview');
+ if(!file){preview.classList.add('hidden');preview.removeAttribute('src');return;}
+ if(!file.type.startsWith('image/')){status('uploadStatus','থাম্বনেইলের জন্য ছবি নির্বাচন করো।');$('thumbnailFile').value='';return;}
+ preview.src=URL.createObjectURL(file);preview.classList.remove('hidden');
+});
 $('uploadBtn').addEventListener('click',async()=>{
- const title=$('title').value.trim();const file=$('videoFile').files[0];if(!title||!file){status('uploadStatus','ভিডিওর নাম ও ফাইল নির্বাচন করুন।');return;}
+ const title=$('title').value.trim();const file=$('videoFile').files[0];const thumb=$('thumbnailFile').files[0];
+ if(!title||!file){status('uploadStatus','ভিডিওর নাম ও ভিডিও ফাইল নির্বাচন করুন।');return;}
+ if(thumb&&!thumb.type.startsWith('image/')){status('uploadStatus','থাম্বনেইল ফাইলটি ছবি হতে হবে।');return;}
  const {data:{user}}=await client.auth.getUser();if(!user||user.id!==ADMIN_UID){status('uploadStatus','Admin login প্রয়োজন।');return;}
- const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');const path=Date.now()+'_'+safe;status('uploadStatus','আপলোড হচ্ছে…');$('uploadBtn').disabled=true;
- const up=await client.storage.from(BUCKET).upload(path,file,{contentType:file.type||'video/mp4',upsert:false});if(up.error){status('uploadStatus','Upload ব্যর্থ: '+up.error.message);$('uploadBtn').disabled=false;return;}
- const ins=await client.from('videos').insert({title,video_path:path});if(ins.error){await client.storage.from(BUCKET).remove([path]);status('uploadStatus','তথ্য সংরক্ষণ হয়নি: '+ins.error.message);$('uploadBtn').disabled=false;return;}
- status('uploadStatus','ভিডিও আপলোড হয়েছে।');$('title').value='';$('videoFile').value='';$('uploadBtn').disabled=false;await loadVideos();await loadDashboard();
+ const stamp=Date.now();const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');const path=stamp+'_video_'+safe;let thumbPath=null;
+ status('uploadStatus','ভিডিও আপলোড হচ্ছে…');$('uploadBtn').disabled=true;
+ const up=await client.storage.from(BUCKET).upload(path,file,{contentType:file.type||'video/mp4',upsert:false});
+ if(up.error){status('uploadStatus','ভিডিও Upload ব্যর্থ: '+up.error.message);$('uploadBtn').disabled=false;return;}
+ if(thumb){const safeThumb=thumb.name.replace(/[^a-zA-Z0-9._-]/g,'_');thumbPath=stamp+'_thumb_'+safeThumb;status('uploadStatus','থাম্বনেইল আপলোড হচ্ছে…');const tu=await client.storage.from(BUCKET).upload(thumbPath,thumb,{contentType:thumb.type,upsert:false});if(tu.error){await client.storage.from(BUCKET).remove([path]);status('uploadStatus','থাম্বনেইল Upload ব্যর্থ: '+tu.error.message);$('uploadBtn').disabled=false;return;}}
+ const record={title,video_path:path};if(thumbPath)record.thumbnail_path=thumbPath;
+ const ins=await client.from('videos').insert(record);
+ if(ins.error){await client.storage.from(BUCKET).remove([path,...(thumbPath?[thumbPath]:[])]);status('uploadStatus','তথ্য সংরক্ষণ হয়নি: '+ins.error.message);$('uploadBtn').disabled=false;return;}
+ status('uploadStatus','ভিডিও ও থাম্বনেইল আপলোড হয়েছে।');$('title').value='';$('videoFile').value='';$('thumbnailFile').value='';$('thumbnailPreview').classList.add('hidden');$('thumbnailPreview').removeAttribute('src');$('uploadBtn').disabled=false;await loadVideos();await loadDashboard();
 });
 $('refreshDashboard').addEventListener('click',loadDashboard);
 $('toggleAds').addEventListener('click',async()=>{
