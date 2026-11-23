@@ -12,7 +12,7 @@
 <body>
 <header><div><h1>🎬 VIRAL VIDEO</h1><p>Watch videos • Admin upload portal</p></div><span class="tag">VIDEO HUB</span></header>
 <main class="wrap">
-<section class="panel"><h2>Latest videos</h2><p class="muted">সর্বশেষ আপলোড করা ভিডিওর তালিকা। ভিডিও প্লেয়ার ও বিজ্ঞাপন এখনো সংযুক্ত করা হয়নি।</p><div id="videoList" class="muted">ভিডিও লোড হচ্ছে…</div></section>
+<section class="panel"><h2>Latest videos</h2><p class="muted">সর্বশেষ আপলোড করা ভিডিও দেখুন। Play চাপলে ভিডিও চালু হবে।</p><div id="videoList" class="muted">ভিডিও লোড হচ্ছে…</div></section>
 <section class="panel"><h2>Admin login</h2><p class="muted">শুধু অনুমোদিত Admin অ্যাকাউন্ট দিয়ে প্রবেশ করুন।</p><label>Email</label><input id="email" type="email" autocomplete="username" placeholder="Admin email"><label>Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Admin password"><div class="row"><button id="loginBtn">Login</button><button id="logoutBtn" class="secondary hidden">Logout</button></div><div id="authStatus" class="status"></div></section>
 <section id="adminPanel" class="hidden">
  <section class="panel"><h2>📊 Admin Dashboard</h2><p class="muted">Supabase ডাটাবেস থেকে পাওয়া হিসাব।</p>
@@ -40,11 +40,28 @@ function status(id,msg){$(id).textContent=msg;}
 function fmt(n){return Number(n||0).toLocaleString();}
 async function loadVideos(){
  const box=$('videoList');
- const {data,error}=await client.from('videos').select('id,title').order('id',{ascending:false}).limit(50);
+ const {data,error}=await client.from('videos').select('id,title,video_path,view_count').order('id',{ascending:false}).limit(50);
  if(error){box.textContent='ভিডিও লোড করা যায়নি: '+error.message;return;}
  if(!data||!data.length){box.textContent='এখনো কোনো ভিডিও আপলোড করা হয়নি।';$('adminVideoList').textContent='কোনো ভিডিও নেই।';return;}
  box.innerHTML='';
- data.forEach(v=>{const card=document.createElement('div');card.className='video';const name=document.createElement('strong');name.textContent=v.title||'Untitled video';const note=document.createElement('span');note.className='muted';note.textContent='ভিডিও প্লেয়ার এখনো যুক্ত হয়নি।';card.append(name,note);box.append(card);});
+ data.forEach(v=>{
+  const card=document.createElement('div');card.className='video';
+  const name=document.createElement('strong');name.textContent=v.title||'Untitled video';
+  const meta=document.createElement('span');meta.className='muted';meta.textContent='ভিউ: '+fmt(v.view_count||0);
+  const play=document.createElement('button');play.textContent='▶ ভিডিও দেখুন';play.style.marginTop='10px';
+  const playerBox=document.createElement('div');playerBox.style.marginTop='12px';
+  play.addEventListener('click',async()=>{
+   play.disabled=true;play.textContent='ভিডিও প্রস্তুত হচ্ছে…';
+   const signed=await client.storage.from(BUCKET).createSignedUrl(v.video_path,3600);
+   if(signed.error){meta.textContent='ভিডিও চালানো যায়নি: '+signed.error.message;play.disabled=false;play.textContent='আবার চেষ্টা করুন';return;}
+   playerBox.innerHTML='';
+   const player=document.createElement('video');player.controls=true;player.playsInline=true;player.preload='metadata';player.style.width='100%';player.style.borderRadius='10px';player.src=signed.data.signedUrl;
+   let counted=false;
+   player.addEventListener('play',async()=>{if(counted)return;counted=true;const result=await client.rpc('record_video_view',{p_video_id:v.id});if(result.error){meta.textContent='ভিউ সংরক্ষণ হয়নি: '+result.error.message;}else{meta.textContent='ভিউ: '+fmt((v.view_count||0)+1);}});
+   playerBox.append(player);play.textContent='ভিডিও চালু হয়েছে';play.disabled=false;
+  });
+  card.append(name,meta,play,playerBox);box.append(card);
+ });
  renderAdminVideos(data);
 }
 function renderAdminVideos(videos){
