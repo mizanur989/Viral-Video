@@ -1,20 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html lang="bn">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>VIRAL VIDEO</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{color-scheme:dark;--bg:#090d18;--panel:#121a2b;--muted:#9aa8c3;--line:#26334c;--accent:#7c5cff;--good:#29c58a}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#0b1020,#101a2c);color:#f6f7fb;font:16px system-ui,Arial,sans-serif}header{padding:22px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{margin:0;font-size:25px;letter-spacing:1px}header p{margin:5px 0 0;color:var(--muted);font-size:13px}.wrap{max-width:920px;margin:24px auto;padding:0 14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin:16px 0}h2{margin:0 0 14px;font-size:19px}input,button{font:inherit;border-radius:10px;padding:12px;border:1px solid var(--line)}input{width:100%;background:#0b1221;color:white;margin:6px 0 12px}button{background:var(--accent);color:white;border:0;font-weight:650;cursor:pointer}button.secondary{background:#27334a}button:disabled{opacity:.55;cursor:not-allowed}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1}.muted{color:var(--muted);font-size:13px}.status{margin-top:10px;font-size:14px;white-space:pre-wrap}.video{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0;background:#0c1424}.video strong{display:block;margin-bottom:5px}.hidden{display:none}.tag{color:var(--good);font-size:12px;font-weight:700}footer{text-align:center;color:var(--muted);padding:24px;font-size:12px}
+:root{color-scheme:dark;--bg:#090d18;--panel:#121a2b;--muted:#9aa8c3;--line:#26334c;--accent:#7c5cff;--good:#29c58a;--warn:#f0b84b}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#0b1020,#101a2c);color:#f6f7fb;font:16px system-ui,Arial,sans-serif}header{padding:22px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{margin:0;font-size:25px;letter-spacing:1px}header p{margin:5px 0 0;color:var(--muted);font-size:13px}.wrap{max-width:980px;margin:24px auto;padding:0 14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin:16px 0}h2{margin:0 0 14px;font-size:19px}input,button{font:inherit;border-radius:10px;padding:12px;border:1px solid var(--line)}input{width:100%;background:#0b1221;color:white;margin:6px 0 12px}button{background:var(--accent);color:white;border:0;font-weight:650;cursor:pointer}button.secondary{background:#27334a}button.danger{background:#9d3445}button:disabled{opacity:.55;cursor:not-allowed}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1}.muted{color:var(--muted);font-size:13px}.status{margin-top:10px;font-size:14px;white-space:pre-wrap}.video{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0;background:#0c1424}.video strong{display:block;margin-bottom:5px}.hidden{display:none!important}.tag{color:var(--good);font-size:12px;font-weight:700}.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat{background:#0c1424;border:1px solid var(--line);border-radius:12px;padding:14px}.stat small{display:block;color:var(--muted);font-size:12px}.stat b{display:block;font-size:25px;margin-top:5px}.admin-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.admin-actions button{font-size:13px;padding:9px 12px}.video-line{display:flex;justify-content:space-between;align-items:center;gap:10px}.video-line>div:first-child{min-width:0}.video-line strong{overflow-wrap:anywhere}footer{text-align:center;color:var(--muted);padding:24px;font-size:12px}@media(min-width:650px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 </head>
 <body>
 <header><div><h1>🎬 VIRAL VIDEO</h1><p>Watch videos • Admin upload portal</p></div><span class="tag">VIDEO HUB</span></header>
 <main class="wrap">
-<section class="panel"><h2>Latest videos</h2><p class="muted">ভিডিওর তালিকা এখানে দেখা যাবে। দর্শকদের জন্য নিরাপদ ভিডিও আনলক ব্যবস্থা এখনো যুক্ত করা হয়নি।</p><div id="videoList" class="muted">ভিডিও লোড হচ্ছে…</div></section>
+<section class="panel"><h2>Latest videos</h2><p class="muted">সর্বশেষ আপলোড করা ভিডিওর তালিকা। ভিডিও প্লেয়ার ও বিজ্ঞাপন এখনো সংযুক্ত করা হয়নি।</p><div id="videoList" class="muted">ভিডিও লোড হচ্ছে…</div></section>
 <section class="panel"><h2>Admin login</h2><p class="muted">শুধু অনুমোদিত Admin অ্যাকাউন্ট দিয়ে প্রবেশ করুন।</p><label>Email</label><input id="email" type="email" autocomplete="username" placeholder="Admin email"><label>Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Admin password"><div class="row"><button id="loginBtn">Login</button><button id="logoutBtn" class="secondary hidden">Logout</button></div><div id="authStatus" class="status"></div></section>
-<section id="uploadPanel" class="panel hidden"><h2>Upload a video</h2><label>Video title</label><input id="title" type="text" placeholder="Enter video title"><label>Select video file</label><input id="videoFile" type="file" accept="video/*"><button id="uploadBtn">Upload video</button><div id="uploadStatus" class="status"></div><p class="muted">ফাইলটি আপনার private Supabase Storage bucket-এ যাবে। বড় ভিডিও আপলোডে নেটওয়ার্ক ও Storage সীমা প্রযোজ্য।</p></section>
+<section id="adminPanel" class="hidden">
+ <section class="panel"><h2>📊 Admin Dashboard</h2><p class="muted">Supabase ডাটাবেস থেকে পাওয়া হিসাব।</p>
+  <div class="stats">
+   <div class="stat"><small>মোট ভিডিও</small><b id="totalVideos">—</b></div>
+   <div class="stat"><small>মোট ভিডিও ভিউ</small><b id="totalViews">—</b></div>
+   <div class="stat"><small>Active users (শেষ ৫ মিনিট)</small><b id="activeUsers">—</b></div>
+   <div class="stat"><small>Followers</small><b id="followers">সিস্টেম নেই</b></div>
+  </div>
+  <div class="admin-actions"><button id="refreshDashboard" class="secondary">Refresh হিসাব</button></div><div id="dashboardStatus" class="status"></div>
+ </section>
+ <section class="panel"><h2>📢 বিজ্ঞাপন নিয়ন্ত্রণ</h2><p class="muted">এই সেটিং ভবিষ্যতের বিজ্ঞাপন প্লেয়ারকে নিয়ন্ত্রণ করার জন্য। বিজ্ঞাপন নেটওয়ার্ক এখনো যুক্ত হয়নি।</p><div class="row"><div class="stat"><small>Ad network status</small><b style="font-size:17px;color:var(--warn)">Not connected</b></div><div class="stat"><small>চালু বিজ্ঞাপন</small><b id="runningAds">0</b></div></div><p id="adsState" class="muted">বিজ্ঞাপন বন্ধ</p><button id="toggleAds" class="secondary">বিজ্ঞাপন চালু করো</button><div id="adsStatus" class="status"></div></section>
+ <section class="panel"><h2>📁 ভিডিও পরিচালনা</h2><div id="adminVideoList" class="muted">ভিডিও লোড হচ্ছে…</div></section>
+</section>
+<section id="uploadPanel" class="panel hidden"><h2>Upload a video</h2><label>Video title</label><input id="title" type="text" placeholder="Enter video title"><label>Select video file</label><input id="videoFile" type="file" accept="video/*"><button id="uploadBtn">Upload video</button><div id="uploadStatus" class="status"></div><p class="muted">ফাইলটি আপনার private Supabase Storage bucket-এ যাবে।</p></section>
 </main><footer>VIRAL VIDEO</footer>
 <script>
 const SUPABASE_URL='https://ibrvmjmltqqltggrxwvc.supabase.co';
@@ -24,12 +37,73 @@ const BUCKET='Video';
 const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 function status(id,msg){$(id).textContent=msg;}
-async function loadVideos(){const box=$('videoList');const {data,error}=await client.from('videos').select('id,title').order('id',{ascending:false}).limit(50);if(error){box.textContent='ভিডিও লোড করা যায়নি: '+error.message;return;}if(!data||!data.length){box.textContent='এখনো কোনো ভিডিও আপলোড করা হয়নি।';return;}box.innerHTML='';data.forEach(v=>{const card=document.createElement('div');card.className='video';const name=document.createElement('strong');name.textContent=v.title||'Untitled video';const note=document.createElement('span');note.className='muted';note.textContent='ভিডিও প্লে করার নিরাপদ আনলক ব্যবস্থা পরে যুক্ত হবে।';card.append(name,note);box.append(card);});}
-async function refreshAuth(){const {data}=await client.auth.getSession();const user=data.session?.user;const allowed=!!user&&user.id===ADMIN_UID;$('uploadPanel').classList.toggle('hidden',!allowed);$('logoutBtn').classList.toggle('hidden',!user);$('loginBtn').classList.toggle('hidden',!!user);if(user&&!allowed)status('authStatus','এই অ্যাকাউন্ট Admin হিসেবে অনুমোদিত নয়।');else if(allowed)status('authStatus','Admin login সফল।');}
+function fmt(n){return Number(n||0).toLocaleString();}
+async function loadVideos(){
+ const box=$('videoList');
+ const {data,error}=await client.from('videos').select('id,title').order('id',{ascending:false}).limit(50);
+ if(error){box.textContent='ভিডিও লোড করা যায়নি: '+error.message;return;}
+ if(!data||!data.length){box.textContent='এখনো কোনো ভিডিও আপলোড করা হয়নি।';$('adminVideoList').textContent='কোনো ভিডিও নেই।';return;}
+ box.innerHTML='';
+ data.forEach(v=>{const card=document.createElement('div');card.className='video';const name=document.createElement('strong');name.textContent=v.title||'Untitled video';const note=document.createElement('span');note.className='muted';note.textContent='ভিডিও প্লেয়ার এখনো যুক্ত হয়নি।';card.append(name,note);box.append(card);});
+ renderAdminVideos(data);
+}
+function renderAdminVideos(videos){
+ const box=$('adminVideoList');box.innerHTML='';
+ if(!videos.length){box.textContent='কোনো ভিডিও নেই।';return;}
+ videos.forEach(v=>{const card=document.createElement('div');card.className='video';const line=document.createElement('div');line.className='video-line';const info=document.createElement('div');const name=document.createElement('strong');name.textContent=v.title||'Untitled video';const id=document.createElement('span');id.className='muted';id.textContent='ID: '+v.id;info.append(name,id);const del=document.createElement('button');del.className='danger';del.textContent='Delete';del.addEventListener('click',()=>deleteVideo(v.id,v.title));line.append(info,del);card.append(line);box.append(card);});
+}
+async function deleteVideo(id,title){
+ if(!confirm('এই ভিডিওটি মুছে ফেলতে চাও?'))return;
+ const {data,error:readErr}=await client.from('videos').select('video_path').eq('id',id).single();
+ if(readErr){status('dashboardStatus','ভিডিওর তথ্য পাওয়া যায়নি: '+readErr.message);return;}
+ if(data?.video_path){const rm=await client.storage.from(BUCKET).remove([data.video_path]);if(rm.error){status('dashboardStatus','Storage থেকে ভিডিও মুছতে পারেনি: '+rm.error.message);return;}}
+ const del=await client.from('videos').delete().eq('id',id);
+ if(del.error){status('dashboardStatus','ডাটাবেস থেকে মুছতে পারেনি: '+del.error.message);return;}
+ status('dashboardStatus','ভিডিও মুছে ফেলা হয়েছে।');await loadVideos();await loadDashboard();
+}
+async function loadDashboard(){
+ status('dashboardStatus','হিসাব লোড হচ্ছে…');
+ const vids=await client.from('videos').select('id,view_count');
+ if(vids.error){status('dashboardStatus','ভিডিওর হিসাব পাওয়া যায়নি: '+vids.error.message);return;}
+ const rows=vids.data||[];const views=rows.reduce((sum,v)=>sum+Number(v.view_count||0),0);
+ $('totalVideos').textContent=fmt(rows.length);$('totalViews').textContent=fmt(views);
+ const cutoff=new Date(Date.now()-5*60*1000).toISOString();
+ const active=await client.from('active_visitors').select('session_id',{count:'exact',head:true}).gt('last_seen',cutoff);
+ if(active.error){$('activeUsers').textContent='—';status('dashboardStatus','ভিডিও হিসাব হয়েছে; Active Users পড়া যায়নি: '+active.error.message);}else{$('activeUsers').textContent=fmt(active.count);status('dashboardStatus','হিসাব আপডেট হয়েছে।');}
+ await loadAdsSetting();
+}
+async function loadAdsSetting(){
+ const {data,error}=await client.from('site_settings').select('ads_enabled').eq('id',1).single();
+ if(error){status('adsStatus','বিজ্ঞাপন সেটিং পড়া যায়নি: '+error.message);return;}
+ const enabled=!!data.ads_enabled;$('adsState').textContent=enabled?'সেটিং: চালু':'সেটিং: বন্ধ';$('toggleAds').textContent=enabled?'বিজ্ঞাপন বন্ধ করো':'বিজ্ঞাপন চালু করো';$('runningAds').textContent='0';
+}
+async function refreshAuth(){
+ const {data}=await client.auth.getSession();const user=data.session?.user;const allowed=!!user&&user.id===ADMIN_UID;
+ $('uploadPanel').classList.toggle('hidden',!allowed);$('adminPanel').classList.toggle('hidden',!allowed);$('logoutBtn').classList.toggle('hidden',!user);$('loginBtn').classList.toggle('hidden',!!user);
+ if(user&&!allowed)status('authStatus','এই অ্যাকাউন্ট Admin হিসেবে অনুমোদিত নয়।');else if(allowed){status('authStatus','Admin login সফল।');await loadDashboard();await loadVideos();}
+}
 $('loginBtn').addEventListener('click',async()=>{status('authStatus','Login হচ্ছে…');const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){status('authStatus','Login হয়নি: '+error.message);return;}if(data.user?.id!==ADMIN_UID){await client.auth.signOut();status('authStatus','এই অ্যাকাউন্ট Admin হিসেবে অনুমোদিত নয়।');return;}status('authStatus','Admin login সফল।');await refreshAuth();});
-$('logoutBtn').addEventListener('click',async()=>{await client.auth.signOut();await refreshAuth();status('authStatus','Logout হয়েছে।');});
-$('uploadBtn').addEventListener('click',async()=>{const title=$('title').value.trim();const file=$('videoFile').files[0];if(!title||!file){status('uploadStatus','ভিডিওর নাম ও ফাইল নির্বাচন করুন।');return;}const {data:{user}}=await client.auth.getUser();if(!user||user.id!==ADMIN_UID){status('uploadStatus','Admin login প্রয়োজন।');return;}const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');const path=Date.now()+'_'+safe;status('uploadStatus','আপলোড হচ্ছে…');$('uploadBtn').disabled=true;const up=await client.storage.from(BUCKET).upload(path,file,{contentType:file.type||'video/mp4',upsert:false});if(up.error){status('uploadStatus','Upload ব্যর্থ: '+up.error.message);$('uploadBtn').disabled=false;return;}const ins=await client.from('videos').insert({title,video_path:path});if(ins.error){await client.storage.from(BUCKET).remove([path]);status('uploadStatus','তথ্য সংরক্ষণ হয়নি: '+ins.error.message);$('uploadBtn').disabled=false;return;}status('uploadStatus','ভিডিও আপলোড হয়েছে।');$('title').value='';$('videoFile').value='';$('uploadBtn').disabled=false;await loadVideos();});
+$('logoutBtn').addEventListener('click',async()=>{await client.auth.signOut();$('adminPanel').classList.add('hidden');$('uploadPanel').classList.add('hidden');await refreshAuth();status('authStatus','Logout হয়েছে।');});
+$('uploadBtn').addEventListener('click',async()=>{
+ const title=$('title').value.trim();const file=$('videoFile').files[0];if(!title||!file){status('uploadStatus','ভিডিওর নাম ও ফাইল নির্বাচন করুন।');return;}
+ const {data:{user}}=await client.auth.getUser();if(!user||user.id!==ADMIN_UID){status('uploadStatus','Admin login প্রয়োজন।');return;}
+ const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');const path=Date.now()+'_'+safe;status('uploadStatus','আপলোড হচ্ছে…');$('uploadBtn').disabled=true;
+ const up=await client.storage.from(BUCKET).upload(path,file,{contentType:file.type||'video/mp4',upsert:false});if(up.error){status('uploadStatus','Upload ব্যর্থ: '+up.error.message);$('uploadBtn').disabled=false;return;}
+ const ins=await client.from('videos').insert({title,video_path:path});if(ins.error){await client.storage.from(BUCKET).remove([path]);status('uploadStatus','তথ্য সংরক্ষণ হয়নি: '+ins.error.message);$('uploadBtn').disabled=false;return;}
+ status('uploadStatus','ভিডিও আপলোড হয়েছে।');$('title').value='';$('videoFile').value='';$('uploadBtn').disabled=false;await loadVideos();await loadDashboard();
+});
+$('refreshDashboard').addEventListener('click',loadDashboard);
+$('toggleAds').addEventListener('click',async()=>{
+ const {data,error}=await client.from('site_settings').select('ads_enabled').eq('id',1).single();if(error){status('adsStatus','সেটিং পড়া যায়নি: '+error.message);return;}
+ const upd=await client.from('site_settings').update({ads_enabled:!data.ads_enabled}).eq('id',1);if(upd.error){status('adsStatus','সেটিং পরিবর্তন হয়নি: '+upd.error.message);return;}
+ status('adsStatus','বিজ্ঞাপনের সেটিং পরিবর্তন হয়েছে। তবে Ad network যুক্ত না হওয়া পর্যন্ত বাস্তব বিজ্ঞাপন চলবে না।');await loadAdsSetting();
+});
+// Anonymous heartbeat: updates a random browser session's last-seen time.
+function makeSessionId(){try{return crypto.randomUUID();}catch(e){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16);});}}
+let sessionId=sessionStorage.getItem('vv_session_id');if(!sessionId){sessionId=makeSessionId();sessionStorage.setItem('vv_session_id',sessionId);}
+async function heartbeat(){await client.rpc('record_active_visit',{p_session_id:sessionId});}
+heartbeat();setInterval(heartbeat,60000);
 client.auth.onAuthStateChange(()=>{refreshAuth();});
-refreshAuth();loadVideos();
+loadVideos();refreshAuth();
 </script>
 </body></html>
