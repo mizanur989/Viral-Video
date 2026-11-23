@@ -44,24 +44,30 @@ async function loadVideos(){
  if(error){box.textContent='ভিডিও লোড করা যায়নি: '+error.message;return;}
  if(!data||!data.length){box.textContent='এখনো কোনো ভিডিও আপলোড করা হয়নি।';$('adminVideoList').textContent='কোনো ভিডিও নেই।';return;}
  box.innerHTML='';
- data.forEach(v=>{
+ for(const v of data){
   const card=document.createElement('div');card.className='video';
   const name=document.createElement('strong');name.textContent=v.title||'Untitled video';
   const meta=document.createElement('span');meta.className='muted';meta.textContent='ভিউ: '+fmt(v.view_count||0);
-  const play=document.createElement('button');play.textContent='▶ ভিডিও দেখুন';play.style.marginTop='10px';
   const playerBox=document.createElement('div');playerBox.style.marginTop='12px';
-  play.addEventListener('click',async()=>{
-   play.disabled=true;play.textContent='ভিডিও প্রস্তুত হচ্ছে…';
-   const signed=await client.storage.from(BUCKET).createSignedUrl(v.video_path,3600);
-   if(signed.error){meta.textContent='ভিডিও চালানো যায়নি: '+signed.error.message;play.disabled=false;play.textContent='আবার চেষ্টা করুন';return;}
-   playerBox.innerHTML='';
-   const player=document.createElement('video');player.controls=true;player.playsInline=true;player.preload='metadata';player.style.width='100%';player.style.borderRadius='10px';player.src=signed.data.signedUrl;
-   let counted=false;
-   player.addEventListener('play',async()=>{if(counted)return;counted=true;const result=await client.rpc('record_video_view',{p_video_id:v.id});if(result.error){meta.textContent='ভিউ সংরক্ষণ হয়নি: '+result.error.message;}else{meta.textContent='ভিউ: '+fmt((v.view_count||0)+1);}});
-   playerBox.append(player);play.textContent='ভিডিও চালু হয়েছে';play.disabled=false;
+  const loading=document.createElement('p');loading.className='muted';loading.textContent='ভিডিওর প্রিভিউ লোড হচ্ছে…';
+  playerBox.append(loading);
+  card.append(name,meta,playerBox);box.append(card);
+  const signed=await client.storage.from(BUCKET).createSignedUrl(v.video_path,3600);
+  if(signed.error){loading.textContent='ভিডিও লোড করা যায়নি: '+signed.error.message;continue;}
+  const player=document.createElement('video');
+  player.controls=true;player.playsInline=true;player.preload='metadata';
+  player.style.width='100%';player.style.maxHeight='420px';player.style.borderRadius='10px';player.style.background='#000';
+  player.src=signed.data.signedUrl;
+  let counted=false;
+  player.addEventListener('play',async()=>{
+   if(counted)return;counted=true;
+   const result=await client.rpc('record_video_view',{p_video_id:v.id});
+   if(result.error){meta.textContent='ভিউ সংরক্ষণ হয়নি: '+result.error.message;}
+   else{meta.textContent='ভিউ: '+fmt((v.view_count||0)+1);}
   });
-  card.append(name,meta,play,playerBox);box.append(card);
- });
+  player.addEventListener('error',()=>{loading.textContent='ভিডিও ফাইল চালানো যাচ্ছে না। ফাইলের ধরন বা Storage access পরীক্ষা করতে হবে।';});
+  playerBox.replaceChildren(player);
+ }
  renderAdminVideos(data);
 }
 function renderAdminVideos(videos){
