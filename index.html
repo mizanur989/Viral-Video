@@ -5,7 +5,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VIRAL VIDEO</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://libtl.com/sdk.js" data-zone="12343388" data-sdk="show_12343388"></script>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#0b1020;color:white;font-family:Arial,sans-serif}
@@ -17,6 +21,7 @@ h2{font-size:19px}
 input,select,button{width:100%;padding:12px;margin:6px 0 12px;border:0;border-radius:9px;font-size:15px}
 input,select{background:#0b1428;color:white;border:1px solid #344361}
 button{background:#7257ff;color:white;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
 .secondary{background:#344361}
 .danger{background:#a9364d}
 .hidden{display:none!important}
@@ -25,13 +30,15 @@ button{background:#7257ff;color:white;font-weight:bold;cursor:pointer}
 .stat{background:#0b1428;padding:12px;border-radius:10px}
 .stat small{color:#aab8d0}
 .stat b{display:block;font-size:24px;margin-top:5px}
-.video img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px}
+.video img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;display:block}
 video{width:100%;max-height:420px;background:black;border-radius:10px;margin-top:10px}
 .status{white-space:pre-wrap;font-size:13px;margin:8px 0}
 .tag{color:#55dda7;font-size:13px}
+.ad-info{background:#292342;padding:12px;border-radius:9px;color:#e0d7ff}
 @media(min-width:650px){.grid{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
+
 <body>
 
 <header>
@@ -41,6 +48,7 @@ video{width:100%;max-height:420px;background:black;border-radius:10px;margin-top
 </header>
 
 <main>
+
 <section class="panel">
 <h2>Latest Videos</h2>
 <div id="videoList">ভিডিও লোড হচ্ছে...</div>
@@ -69,13 +77,18 @@ video{width:100%;max-height:420px;background:black;border-radius:10px;margin-top
 
 <section class="panel hidden" id="uploadPanel">
 <h2>📤 Upload Video</h2>
+
 <label>ভিডিওর নাম</label>
 <input id="title" placeholder="ভিডিওর নাম লিখুন">
+
 <label>ভিডিও ফাইল</label>
 <input id="videoFile" type="file" accept="video/*">
-<label>থাম্বনেইল ছবি</label>
+
+<label>থাম্বনেইল ছবি (বাধ্যতামূলক)</label>
 <input id="thumbFile" type="file" accept="image/*">
+
 <img id="preview" class="hidden" alt="Thumbnail preview">
+
 <label>ভিডিওর ধরন</label>
 <select id="adsRequired">
 <option value="0">Free video</option>
@@ -89,7 +102,7 @@ video{width:100%;max-height:420px;background:black;border-radius:10px;margin-top
 <option value="9">9 Ads</option>
 <option value="10">10 Ads</option>
 </select>
-<p class="muted">Rewarded Ads ও সার্ভার যাচাই যুক্ত হওয়ার আগে Ads-লক ভিডিও চালু হবে না।</p>
+
 <button id="uploadBtn">Upload Video</button>
 <div id="uploadStatus" class="status"></div>
 </section>
@@ -98,10 +111,12 @@ video{width:100%;max-height:420px;background:black;border-radius:10px;margin-top
 <h2>Manage Videos</h2>
 <div id="adminVideos"></div>
 </section>
+
 </main>
 
 <script>
 (function(){
+
 const SUPABASE_URL='https://ibrvmjmltqqltggrxwvc.supabase.co';
 const SUPABASE_KEY='sb_publishable_hzVS0Obl0pv-xeGBWvv2aw_nkoi22l_';
 const ADMIN_UID='d03a6ca1-b954-48a1-b54a-a4f725737492';
@@ -110,6 +125,12 @@ const BUCKET='Video';
 const $=id=>document.getElementById(id);
 const msg=(id,t)=>$(id).textContent=t;
 const format=n=>Number(n||0).toLocaleString();
+
+const tg=window.Telegram?.WebApp;
+if(tg){
+ tg.ready();
+ tg.expand();
+}
 
 function showLogin(){
  $('loginPanel').classList.toggle('hidden',location.hash!=='#admin');
@@ -128,6 +149,7 @@ function makeSessionId(){
 }
 
 let db;
+
 try{
  if(!window.supabase)throw new Error('Supabase library লোড হয়নি।');
  db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -142,130 +164,294 @@ async function signed(path){
  return r.data.signedUrl;
 }
 
+/* Monetag Rewarded Ad */
+
+async function showRewardedAd(){
+ if(typeof window.show_12343388!=='function'){
+  throw new Error('Monetag SDK লোড হয়নি।');
+ }
+
+ await window.show_12343388();
+ return true;
+}
+
+/* Monetag automatic In-App Interstitial */
+
+function startInAppAds(){
+ if(typeof window.show_12343388!=='function')return;
+
+ try{
+  window.show_12343388({
+   type:'inApp',
+   inAppSettings:{
+    frequency:2,
+    capping:0.1,
+    interval:30,
+    timeout:5,
+    everyPage:false
+   }
+  }).catch(()=>{});
+ }catch(e){
+  console.log('In-App Ads:',e);
+ }
+}
+
+/* Video player */
+
+async function createPlayer(card,v,tag){
+ try{
+  const url=await signed(v.video_path);
+
+  const player=document.createElement('video');
+  player.controls=true;
+  player.playsInline=true;
+  player.preload='metadata';
+  player.src=url;
+
+  let counted=false;
+
+  player.addEventListener('play',async()=>{
+   if(counted)return;
+   counted=true;
+
+   const r=await db.rpc('record_video_view',{
+    p_video_id:v.id
+   });
+
+   if(!r.error){
+    tag.textContent='VIDEO • ভিউ: '+format((v.view_count||0)+1);
+   }
+  });
+
+  const playButton=document.createElement('button');
+  playButton.textContent='▶ ভিডিও চালান';
+
+  playButton.onclick=async()=>{
+   try{
+    await player.play();
+    playButton.classList.add('hidden');
+   }catch(e){
+    playButton.textContent='আবার ভিডিও চালান';
+   }
+  };
+
+  card.append(playButton,player);
+
+ }catch(e){
+  const error=document.createElement('p');
+  error.className='muted';
+  error.textContent='ভিডিও লোড হয়নি: '+e.message;
+  card.append(error);
+ }
+}
+
+/* Load Videos */
+
 async function loadVideos(){
  const box=$('videoList');
  box.textContent='ভিডিও লোড হচ্ছে...';
+
  try{
   const {data,error}=await db.from('videos')
    .select('id,title,video_path,thumbnail_path,view_count,ads_required')
    .order('id',{ascending:false});
 
   if(error)throw error;
+
   box.innerHTML='';
-  if(!data.length){box.textContent='কোনো ভিডিও নেই।';return;}
+
+  if(!data.length){
+   box.textContent='কোনো ভিডিও নেই।';
+   return;
+  }
 
   for(const v of data){
+
    const card=document.createElement('div');
    card.className='video';
+
    const title=document.createElement('h3');
    title.textContent=v.title||'Untitled';
    card.append(title);
 
    const required=Number(v.ads_required||0);
+
    const tag=document.createElement('p');
    tag.className='tag';
    tag.textContent=required===0?'FREE VIDEO':'🔒 '+required+' Ads required';
    card.append(tag);
 
-   if(required>0){
-    const notice=document.createElement('p');
-    notice.className='muted';
-    notice.textContent='এই ভিডিওর Rewarded Ads যাচাই এখনো যুক্ত হয়নি।';
-    card.append(notice);
-    box.append(card);
-    continue;
-   }
+   /* Thumbnail is shown for all videos */
 
-   try{
-    if(v.thumbnail_path){
+   if(v.thumbnail_path){
+    try{
      const img=document.createElement('img');
      img.src=await signed(v.thumbnail_path);
      img.alt=v.title||'Thumbnail';
      card.append(img);
+    }catch(e){
+     const error=document.createElement('p');
+     error.className='muted';
+     error.textContent='Thumbnail লোড হয়নি।';
+     card.append(error);
     }
-    const player=document.createElement('video');
-    player.controls=true;
-    player.playsInline=true;
-    player.preload='metadata';
-    player.src=await signed(v.video_path);
-    let counted=false;
-    player.addEventListener('play',async()=>{
-     if(counted)return;
-     counted=true;
-     const r=await db.rpc('record_video_view',{p_video_id:v.id});
-     if(!r.error)tag.textContent='FREE VIDEO • ভিউ: '+format((v.view_count||0)+1);
-    });
-    card.append(player);
-   }catch(e){
-    const err=document.createElement('p');
-    err.className='muted';
-    err.textContent='ভিডিও ফাইল লোড হয়নি: '+e.message;
-    card.append(err);
    }
+
+   if(required===0){
+    await createPlayer(card,v,tag);
+   }else{
+
+    let remaining=required;
+    let unlocked=false;
+
+    const info=document.createElement('p');
+    info.className='ad-info';
+    info.textContent='🔒 ভিডিও দেখতে '+remaining+'টি বিজ্ঞাপন সম্পন্ন করুন।';
+
+    const adButton=document.createElement('button');
+    adButton.textContent='বিজ্ঞাপন দেখুন ও ভিডিও আনলক করুন';
+
+    const status=document.createElement('p');
+    status.className='status muted';
+
+    adButton.onclick=async()=>{
+
+     if(unlocked)return;
+
+     adButton.disabled=true;
+     adButton.textContent='বিজ্ঞাপন লোড হচ্ছে...';
+     status.textContent='বিজ্ঞাপন সম্পন্ন হওয়ার অপেক্ষায়...';
+
+     try{
+      await showRewardedAd();
+
+      remaining--;
+
+      if(remaining>0){
+       info.textContent='🔒 আরও '+remaining+'টি বিজ্ঞাপন বাকি।';
+       status.textContent='বিজ্ঞাপন সম্পন্ন হয়েছে।';
+       adButton.textContent='পরের বিজ্ঞাপন দেখুন';
+       adButton.disabled=false;
+      }else{
+       unlocked=true;
+       info.textContent='✅ ভিডিও আনলক হয়েছে!';
+       status.textContent='এখন ভিডিও চালাতে পারবেন।';
+       adButton.classList.add('hidden');
+       await createPlayer(card,v,tag);
+      }
+
+     }catch(e){
+      status.textContent='বিজ্ঞাপন চালানো যায়নি। আবার চেষ্টা করুন।';
+      adButton.textContent='আবার বিজ্ঞাপন দেখুন';
+      adButton.disabled=false;
+     }
+    };
+
+    card.append(info,adButton,status);
+   }
+
    box.append(card);
   }
+
   await renderAdminVideos(data);
+
  }catch(e){
   box.textContent='ভিডিও লোড হয়নি: '+(e.message||String(e));
  }
 }
 
+/* Admin video list */
+
 async function renderAdminVideos(videos){
  const box=$('adminVideos');
  box.innerHTML='';
+
  videos.forEach(v=>{
   const card=document.createElement('div');
   card.className='video';
+
   const name=document.createElement('b');
   name.textContent=v.title||'Untitled';
+
   const info=document.createElement('p');
   info.className='muted';
   info.textContent='Ads Required: '+(v.ads_required||0);
+
   const del=document.createElement('button');
   del.className='danger';
   del.textContent='Delete';
   del.onclick=()=>deleteVideo(v);
+
   card.append(name,info,del);
   box.append(card);
  });
 }
 
+/* Delete video */
+
 async function deleteVideo(v){
  if(!confirm('ভিডিও মুছে ফেলবেন?'))return;
+
  try{
   const paths=[v.video_path,v.thumbnail_path].filter(Boolean);
+
   if(paths.length){
    const rm=await db.storage.from(BUCKET).remove(paths);
    if(rm.error)throw rm.error;
   }
+
   const {error}=await db.from('videos').delete().eq('id',v.id);
   if(error)throw error;
+
   await loadVideos();
   await loadDashboard();
- }catch(e){alert('মুছতে সমস্যা: '+e.message);}
+
+ }catch(e){
+  alert('মুছতে সমস্যা: '+e.message);
+ }
 }
+
+/* Dashboard */
 
 async function loadDashboard(){
  try{
   const {data,error}=await db.from('videos').select('id,view_count');
   if(error)throw error;
+
   $('totalVideos').textContent=format(data.length);
-  $('totalViews').textContent=format(data.reduce((s,v)=>s+Number(v.view_count||0),0));
+
+  $('totalViews').textContent=format(
+   data.reduce((s,v)=>s+Number(v.view_count||0),0)
+  );
+
   const cutoff=new Date(Date.now()-300000).toISOString();
+
   const active=await db.from('active_visitors')
    .select('session_id',{count:'exact',head:true})
    .gt('last_seen',cutoff);
+
   $('activeUsers').textContent=active.error?'—':format(active.count);
-  msg('dashboardStatus',active.error?'Active users: '+active.error.message:'Dashboard আপডেট হয়েছে।');
- }catch(e){msg('dashboardStatus',e.message);}
+
+  msg(
+   'dashboardStatus',
+   active.error?'Active users: '+active.error.message:'Dashboard আপডেট হয়েছে।'
+  );
+
+ }catch(e){
+  msg('dashboardStatus',e.message);
+ }
 }
+
+/* Authentication */
 
 async function auth(){
  try{
   const {data,error}=await db.auth.getSession();
   if(error)throw error;
+
   const user=data.session?.user;
   const allowed=!!user&&user.id===ADMIN_UID;
+
   $('dashboard').classList.toggle('hidden',!allowed);
   $('uploadPanel').classList.toggle('hidden',!allowed);
   $('managePanel').classList.toggle('hidden',!allowed);
@@ -279,21 +465,31 @@ async function auth(){
    await loadDashboard();
    await loadVideos();
   }
- }catch(e){msg('authStatus','Login যাচাই সমস্যা: '+e.message);}
+
+ }catch(e){
+  msg('authStatus','Login যাচাই সমস্যা: '+e.message);
+ }
 }
 
 $('loginBtn').onclick=async()=>{
  msg('authStatus','Login হচ্ছে...');
+
  const {data,error}=await db.auth.signInWithPassword({
   email:$('email').value.trim(),
   password:$('password').value
  });
- if(error){msg('authStatus',error.message);return;}
+
+ if(error){
+  msg('authStatus',error.message);
+  return;
+ }
+
  if(data.user?.id!==ADMIN_UID){
   await db.auth.signOut();
   msg('authStatus','এই অ্যাকাউন্ট Admin নয়।');
   return;
  }
+
  await auth();
 };
 
@@ -302,90 +498,169 @@ $('logoutBtn').onclick=async()=>{
  await auth();
 };
 
+/* Thumbnail preview */
+
 $('thumbFile').onchange=()=>{
  const file=$('thumbFile').files[0];
  const img=$('preview');
- if(!file){img.classList.add('hidden');return;}
+
+ if(!file){
+  img.classList.add('hidden');
+  return;
+ }
+
  if(!file.type.startsWith('image/')){
-  msg('uploadStatus','ছবি নির্বাচন করুন।');
+  msg('uploadStatus','সঠিক ছবি নির্বাচন করুন।');
   $('thumbFile').value='';
   return;
  }
+
  img.src=URL.createObjectURL(file);
+ img.style.width='100%';
+ img.style.borderRadius='10px';
  img.classList.remove('hidden');
 };
 
+/* Unique file name */
+
+function uniqueName(name){
+ const safe=name.replace(/[^a-zA-Z0-9._-]/g,'_');
+ const random=Math.random().toString(36).slice(2,10);
+ return Date.now()+'_'+random+'_'+safe;
+}
+
+/* Upload video and thumbnail */
+
 $('uploadBtn').onclick=async()=>{
+
  const title=$('title').value.trim();
  const file=$('videoFile').files[0];
  const thumb=$('thumbFile').files[0];
  const ads=Number($('adsRequired').value);
- if(!title||!file){msg('uploadStatus','নাম ও ভিডিও ফাইল দিন।');return;}
+
+ if(!title||!file||!thumb){
+  msg('uploadStatus','ভিডিওর নাম, ভিডিও ফাইল ও Thumbnail দিন।');
+  return;
+ }
+
+ if(!file.type.startsWith('video/')){
+  msg('uploadStatus','সঠিক ভিডিও ফাইল নির্বাচন করুন।');
+  return;
+ }
+
+ if(!thumb.type.startsWith('image/')){
+  msg('uploadStatus','সঠিক Thumbnail ছবি নির্বাচন করুন।');
+  return;
+ }
 
  const {data:{user}}=await db.auth.getUser();
- if(!user||user.id!==ADMIN_UID){msg('uploadStatus','Admin Login প্রয়োজন।');return;}
+
+ if(!user||user.id!==ADMIN_UID){
+  msg('uploadStatus','Admin Login প্রয়োজন।');
+  return;
+ }
 
  $('uploadBtn').disabled=true;
+
+ let path=null;
+ let thumbPath=null;
+
  try{
-  const stamp=Date.now();
-  const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-  const path=stamp+'_video_'+safe;
-  let thumbPath=null;
+
+  path=uniqueName(file.name);
+  thumbPath=uniqueName(thumb.name);
 
   msg('uploadStatus','ভিডিও আপলোড হচ্ছে...');
-  const up=await db.storage.from(BUCKET).upload(path,file,{contentType:file.type||'video/mp4'});
+
+  const up=await db.storage.from(BUCKET).upload(
+   path,file,{contentType:file.type}
+  );
+
   if(up.error)throw up.error;
 
-  if(thumb){
-   thumbPath=stamp+'_thumb_'+thumb.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-   const t=await db.storage.from(BUCKET).upload(thumbPath,thumb,{contentType:thumb.type});
-   if(t.error){
-    await db.storage.from(BUCKET).remove([path]);
-    throw t.error;
-   }
-  }
+  msg('uploadStatus','Thumbnail আপলোড হচ্ছে...');
 
-  const record={title,video_path:path,ads_required:ads};
-  if(thumbPath)record.thumbnail_path=thumbPath;
+  const t=await db.storage.from(BUCKET).upload(
+   thumbPath,thumb,{contentType:thumb.type}
+  );
+
+  if(t.error)throw t.error;
+
+  const record={
+   title:title,
+   video_path:path,
+   thumbnail_path:thumbPath,
+   ads_required:ads
+  };
+
   const ins=await db.from('videos').insert(record);
-  if(ins.error){
-   await db.storage.from(BUCKET).remove([path,...(thumbPath?[thumbPath]:[])]);
-   throw ins.error;
-  }
+
+  if(ins.error)throw ins.error;
 
   msg('uploadStatus','ভিডিও আপলোড সফল হয়েছে।');
+
   $('title').value='';
   $('videoFile').value='';
   $('thumbFile').value='';
   $('preview').classList.add('hidden');
+
   await loadVideos();
   await loadDashboard();
+
  }catch(e){
+
+  const paths=[path,thumbPath].filter(Boolean);
+
+  if(paths.length){
+   await db.storage.from(BUCKET).remove(paths);
+  }
+
   msg('uploadStatus','আপলোড হয়নি: '+e.message);
+
  }finally{
   $('uploadBtn').disabled=false;
  }
 };
 
+/* Refresh */
+
 $('refreshBtn').onclick=loadDashboard;
 
+/* Active visitor tracking */
+
 let sessionId=sessionStorage.getItem('vv_session');
+
 if(!sessionId){
  sessionId=makeSessionId();
  sessionStorage.setItem('vv_session',sessionId);
 }
+
 async function heartbeat(){
  try{
-  await db.rpc('record_active_visit',{p_session_id:sessionId});
+  await db.rpc('record_active_visit',{
+   p_session_id:sessionId
+  });
  }catch(e){}
 }
+
 heartbeat();
 setInterval(heartbeat,60000);
 
-db.auth.onAuthStateChange(()=>auth());
+/* Start */
+
+db.auth.onAuthStateChange(()=>{
+ auth();
+});
+
 loadVideos();
 auth();
+
+/* Automatic In-App Ads */
+
+setTimeout(startInAppAds,5000);
+
 })();
 </script>
+
 </body>
 </html>
